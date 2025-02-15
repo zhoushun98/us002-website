@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset=utf-8>
+    <title>Bitstamp live orders example</title>
+    <link rel="preload" href="https://assets.bitstamp.net/s/fonts/JakartaSans-VF-lite.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face {
+            font-family: "JakartaSans";
+            font-weight: 200 800;
+            font-display: swap;
+            src: url("https://assets.bitstamp.net/s/fonts/JakartaSans-VF-lite.woff2") format("woff2-variations");
+            unicode-range: U+0000-00A0, U+00A2-00A9, U+00AC-00AE, U+00B0-00BE, U+00D7, U+00F7, U+2000-206F,
+            U+20AC, U+2122, U+2190-21BB, U+2212, U+2215, U+F8FF, U+FEFF, U+FFFD, U+2248-2265;
+        }
+
+        body {
+            font-family: 'JakartaSans', sans-serif;
+        }
+
+        h1 {
+            font-size: 30px;
+            width: 500px;
+            color: #666;
+            margin: 0 auto 20px auto;
+            text-align: center;
+        }
+
+        #orders_placeholder {
+            width: 600px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        #orders_placeholder > li {
+            list-style: none;
+        }
+    </style>
+</head>
+<body>
+<h1>Bitstamp live orders</h1>
+<ol id="orders_placeholder"></ol>
+<script type="text/javascript" src="/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        var placeholder = $('#orders_placeholder');
+        /**
+         * This variable is an example of subscription message. By changing its event property to: "bts:unsubscribe"
+         * you can delete your subscription and stop receiving events.
+         */
+        var subscribeMsg = {
+            "event": "bts:subscribe",
+            "data": {
+                "channel": "live_orders_btcusd"
+            }
+        };
+        var orderTypes = ['order_created', 'order_changed', 'order_deleted'];
+        /**
+         * Define a variable for websocket
+         */
+        var ws;
+        initWebsocket();
+
+        /**
+         * Serializes an order to HTML when it's received.
+         */
+        function serializeOrder(eventName, data) {
+            if ($('ol li').length > 30) {
+                placeholder.find('li:first').remove();
+            }
+            placeholder.append('<li>[' + eventName + '] (' + data.datetime + ') ' + data.id + ': ' + data.amount + ' BTC @ ' + data.price + ' USD ' + ((data.order_type == 0) ? 'BUY' : 'SELL') + '</li>');
+        }
+
+        function initWebsocket() {
+            ws = new WebSocket("wss://ws.bitstamp.net");
+
+            ws.onopen = function () {
+                ws.send(JSON.stringify(subscribeMsg));
+            };
+
+            ws.onmessage = function (evt) {
+                response = JSON.parse(evt.data);
+                /**
+                 * This statement handles message logic. It processes data in case of order_created,
+                 * order_changed or order_deleted events.
+                 * Reconnects if the server requires.
+                 */
+                if (orderTypes.indexOf(response.event) !== -1) {
+                    serializeOrder(response.event, response.data);
+                } else if (response.event === 'bts:request_reconnect') {
+                    initWebsocket();
+                }
+            };
+
+            /**
+             * In case of unexpected close event, try to reconnect.
+             */
+            ws.onclose = function () {
+                console.log('Websocket connection closed');
+                initWebsocket();
+            };
+        }
+    });
+</script>
+</body>
+</html>

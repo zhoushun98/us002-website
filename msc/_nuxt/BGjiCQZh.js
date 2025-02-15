@@ -1,0 +1,1 @@
+﻿import{r,u as s}from"./Ca8kBgT7.js";const e=r(!1);let a=!1;const u=()=>{const t=s();return t.isHydrating&&(e.value||(e.value=!0),a||(a=!0,t.hooks.hookOnce("app:suspense:resolve",()=>{e.value=!1}))),e};export{u};

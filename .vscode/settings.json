@@ -1,0 +1,7 @@
+{
+    "i18n-ally.localesPaths": [
+        "src/lang",
+        "src/assets/lang"
+    ],
+    "editor.formatOnSave": false
+}
